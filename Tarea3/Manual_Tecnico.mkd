@@ -1,0 +1,139 @@
+**MANUAL TECNICO**
+
+**Direccionamiento IP**
+
+La conextividad sera dentro de la misma red VLAN debido a que no se usara un enrutador.
+
+IPs por VLAN:
+
+    VLAN	 Nombre 	Red / Máscara	    PCs
+
+    10	     ADMIN	    192.168.10.0 /24	PC3
+
+    20	     MERCA	    192.168.20.0 /24	PC4, PC5
+
+    30	     VENTAS 	192.168.30.0 /24	PC0, PC1, PC2
+
+IPs utilizadas:
+
+
+    PC3 (ADMIN): 192.168.10.10 /24
+
+    PC4 (MERCA): 192.168.20.10 /24
+
+    PC5 (MERCA): 192.168.20.11 /24
+
+    PC0 (VENTAS): 192.168.30.10 /24
+
+    PC1 (VENTAS): 192.168.30.11 /24
+
+    PC2 (VENTAS): 192.168.30.12 /24
+
+Gateway: se configuró como vacio (o 0.0.0.0). No se necesita para ping dentro de la misma red/VLAN.
+
+**Configuración VTP**
+
+*Roles:*
+
+    Switch0 (central): VTP Server 
+
+    Ventas: VTP Client 
+
+    Merca: VTP Client 
+
+    Admin: VTP Transparent 
+
+*Parámetros utilizados:*
+
+    VTP domain: redes1
+
+    VTP password: cisco
+
+    VTP version: 2
+
+*Configuración de Troncales*
+
+Enlaces uplink hacia Switch0 en:
+
+    Switch0: Fa0/1, Fa0/2, Fa0/3
+
+    Ventas: Fa0/1
+
+    Admin: Fa0/1
+
+    Merca: Fa0/1
+
+
+**Scripts de configuración**
+
+
+*Switch Ventas* 
+
+![show vtp status - Switch0](imagenes/Ventasswitch.png)
+
+*Switch Merca*
+
+![show vtp status - Switch0](imagenes/Mercaswitch.png)
+
+*Switch Admin*
+
+![show vtp status - Switch0](imagenes/Adminswitch.png)
+
+
+**Verificación**
+
+
+Switch0 : VTP Operating Mode Server
+
+![show vtp status - Switch0](imagenes/statusSwitch0.png)
+
+Ventas y Merca: Client
+
+![show vtp status - Switch0](imagenes/Statusventa.png)
+
+![show vtp status - Switch0](imagenes/statusMerca.png)
+
+Admin: Transparent
+
+![show vtp status - Switch0](imagenes/statusadmin.png)
+
+
+**Verificación VLANs y puertos asignados**
+
+Se utiliza el siguiente comando para verificar:
+
+    show vlan brief
+
+
+![show vtp status - Switch0](imagenes/briefVentas.png)
+
+![show vtp status - Switch0](imagenes/briefMerca.png)
+
+![show vtp status - Switch0](imagenes/briefadmin.png)
+
+
+**Pruebas de conectividad (ping)**
+
+*Conectividad exitosa (misma VLAN):*
+
+VLAN VENTAS
+
+![show vtp status - Switch0](imagenes/VLANVENTAS.png)
+
+VLAN MERCA
+
+![show vtp status - Switch0](imagenes/VLANMERCA.png)
+
+*Fallos de conectividad (distintas VLAN):*
+
+VENTAS a MERCA.
+
+![show vtp status - Switch0](imagenes/VENTASAMERCA.png)
+
+VENTAS a ADMIN.
+
+![show vtp status - Switch0](imagenes/VENTASAADMIN.png)
+
+MERCA a ADMIN.
+
+![show vtp status - Switch0](imagenes/MERCAAADMIN.png)
