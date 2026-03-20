@@ -1,0 +1,421 @@
+**MANUAL TÉCNICO – RED DE CAMPUS**
+
+Este documento describe el diseño, configuración y validación de la infraestructura de red del campus, incluyendo múltiples edificios con integración de tecnologías de capa 1 y capa 2 como VLAN, VTP, STP, EtherChannel y enlaces troncales.
+
+****
+
+**Topología de Red**
+
+Topología Completa
+![Texto alternativo](img/Topologiacompleta.png)
+
+Edificio A
+![Texto alternativo](img/EdificioA.png)
+
+Edificio B
+
+![Texto alternativo](img/EdificioB.png)
+
+Edificio C
+
+![Texto alternativo](img/EdificioC.png)
+
+Edificio D
+
+![Texto alternativo](img/EdificioD.png)
+
+****
+
+**Dominios de Colisión**
+
+Edificio A
+
+    Área / Dispositivo	Cantidad	Descripción de los Dominios (Segmentos)
+    Switch SW-A2	    6	        Conexiones a: PC Admin2, PC Laboratorio4, 
+                                    
+                                    PC Laboratorio2, SW-A1, y el EtherChannel (2 
+                                    enlaces físicos) hacia SW-A3.
+
+    Switch SW-A3	    4	        Conexiones a: Access Point AC-A1, SW-A1, y 
+                                    el EtherChannel (2 enlaces físicos) hacia SW-A2.
+
+    Switch SW-A1	    4	        Conexiones a: SW-A2, SW-A3, y los 2 
+                                    enlaces de Fibra Óptica (100Base-FX) que 
+                                    salen del edificio.
+
+    Access Point AC-A1	1	        El medio inalámbrico compartido (WLAN) 
+                                    actúa como un único dominio de colisión 
+                                    para  Smartphone, Docencia2 y Docencia3.
+
+Edificio B
+
+    Área / Dispositivo	Cantidad	Descripción de los Dominios (Segmentos)
+    Switch SW-B3	    4	        Conexiones a: PC Biblioteca1, Laptop 
+                                    Docencia6, SW-B1 y SW-B4.
+
+    Switch SW-B4	    4	        Conexiones a: Laptop Admin1, Laptop 
+                                    Biblioteca2, SW-B1 y SW-B3.
+
+    Switch SW-B1	    4	        Conexiones a: SW-B3, SW-B4 y los 2 enlaces de 
+                                    fibra (rojos) superiores.
+
+    Switch SW-B2	    3	        Conexiones a: Hub-B1, y los 2 enlaces de 
+                                    fibra (rojos) laterales.
+
+    Hub-B1 (Legacy)	    1	        Un solo dominio compartido para: PC 
+                                    Biblioteca3, PC Biblioteca4 y PC Biblioteca5.
+
+Edificio C
+
+    Área / Dispositivo  Cantidad    Descripción de los Dominios (Segmentos)
+    Switch SW-C1        1           Conexión a: PC Docencia9.
+
+    Switch SW-C2        2           Conexiones a: Laptop Docencia7 y PC Docencia8.
+
+    Switch SW-C3        2           Conexiones a: PC Admin3 y PC Biblioteca6.
+
+    Switch SW-C4        3           Conexiones a: El enlace hacia el Hub y los 
+                                    2 enlaces de fibra (rojos) de salida.
+
+    Hub-C1 (Central)    1           Dominio Único compartido que interconecta a: 
+                                    SW-C1, SW-C2, SW-C3 y SW-C4.
+
+Edificio D
+    
+    Área / Dispositivo	Cantidad	Descripción de los Dominios (Segmentos)
+    Switch SW-E1	    3	        Conexiones a: AC-D1, SW-D2 y SW-D1.
+
+    Switch SW-D1	    3	        Conexiones a: SW-E1 y los 2 enlaces de 
+                                    fibra (rojos) superiores.
+
+    Switch SW-D4	    2	        Conexiones a: PC Laboratorio3 y PC 
+                                    Biblioteca7.
+
+    Switch SW-D5	    3	        Conexiones a: SW-D2 y los 2 enlaces de 
+                                    fibra (rojos) laterales.
+
+    Segmento SW-D2	    2	        Conexiones a: SW-E1 y SW-D4.
+
+    Segmento Repetidor	1	        Dominio compartido que une el puerto de 
+                                    SW-D3 con el puerto de SW-D2 a través del 
+                                    Repetidor-D1.
+
+    Switch SW-D3	    3	        Conexiones a: Server Docencia10, PC Admin4 
+                                    y PC Admin5.
+
+    Access Point AC-D1	1	        Dominio inalámbrico compartido para: PC 
+                                    Visitantes 1, 2 y 3.
+
+
+****
+
+**Dominios de Broadcast**
+
+Edificio A
+
+    VLAN	    Dominio	        Dispositivos
+    VLAN 21	    Administracion	PC Admin2
+    VLAN 11	    Laboratorio     Laptops Docencia + Smartphone
+    VLAN 41	    Docencia        PCs Laboratorio
+    VLAN 99     Nativa/Gestion  Interfaces de administración de SW-A1, 
+                                SW-A2, SW-A3 y AC-A1.
+
+
+Edificio B
+
+    VLAN	    Dominio	        Dispositivos
+    VLAN 21	    Administracion	Admin1
+    VLAN 11	    Docencia        Docencia6
+    VLAN 31	    Biblioteca      Biblioteca1, Biblioteca2, Biblioteca3,      
+                                Biblioteca4, Biblioteca5
+    VLAN 99     Gestion         Interfaces de administración de SW-B1, SW-B2, 
+                                SW-B3 y SW-B4.
+
+Edificio C
+
+    VLAN	    Dominio	        Dispositivos
+    VLAN 21	    Administracion  PC Admin3
+    VLAN 11     Docencia        Docencia7, Docencia8, Docencia9
+    VLAN 31	    Biblioteca      Biblioteca6
+    VLAN 99     Gestion         Interfaces de administración de SW-C1, SW-C2,   
+                                SW-C3 y SW-C4.
+
+Edificio D
+
+    VLAN	    Dominio	        Dispositivos    
+    VLAN 21	    Administracion  Admin4, Admin5
+    VLAN 11	    Docencia        Docencia10
+    VLAN 41	    Laboratorio     Laboratorio3
+    VLAN 31	    Biblioteca	    Biblioteca7
+    VLAN 51	    Visitantes      Visitantes (WiFi)
+    VLAN 99     Gestion         Interfaces de todos los switches (SW-D1 al SW-D5 
+                                y SW-E1).
+
+****
+
+**LISTA DE COMANDOS UTILIZADOS**
+
+**VLANs Configuradas**
+
+Los comandos utilizados para la configuracion de las VLANs son:
+
+    vlan 11
+    name Docencia
+    vlan 21
+    name ADMIN
+    vlan 31
+    name BIBLIOTECA
+    vlan 41
+    name Laboratorio
+    vlan 51
+    name Visitantes
+
+
+**VTP**
+
+Los comandos utilizados para la configuracion de VTP son:
+
+*vtp server*
+
+    vtp version 2
+    vtp domain C2_NetCore
+    vtp mode server
+
+
+*vtp cliente*
+
+    vtp version 2
+    vtp domain C2_NetCore
+    vtp mode client
+
+
+*vtp transaparente*
+
+    vtp version 2
+    vtp domain C2_NetCore
+    vtp mode client
+
+**EtherChannel**
+Para la configuracion de EtherChanel inter edificios y de dispositivos B1 a B2 se utilizo el protocolo PAgP, y para la configuracion intra-edificio se utilizo el protocolo LACP
+
+*Protocolo PAgP*
+primero se definio las interfaces a utilizar, en el siguiente ejemplo se indican las interfaces FastEthernet 6/1 y 7/1 pero se aplica para el resto de configuraciones y sus interfaces
+
+    interface range fa 6/1, fa 7/1
+    channel-protocol pagp
+    channel-group 5 mode desirable
+
+    interface range fa 6/1, fa 7/1
+    channel-protocol pagp
+    channel-group 5 mode auto
+
+*Protocolo LACP*
+
+primero se definio las interfaces a utilizar, en el siguiente ejemplo se indican las interfaces FastEthernet 0/4 y 0/5 utilizadas por los switches SW-A2 y SW-A3
+
+    interface range fa 0/4 - 5
+    channel-protocol lacp
+    channel-group 1 mode active
+    
+    interface range fa 0/4 - 5
+    channel-protocol lacp
+    channel-group 1 mode passive
+
+**Trunk**
+Para los enlaces troncales se configuro primeramente las interfaces a utilizar, en algunos caso se seleccionaron  los puertos y en otros casos los port channel creados:
+
+    interface gi0/1
+    switchport mode trunk
+
+    interface port-channel 1           
+    switchport mode trunk
+
+y se asignaron las vlan correspondientes a cada puerto trunk:
+
+    switchport trunk allowed vlan 11,21,31,41, 51
+
+**STP Rapid-PVST**
+
+Para el root Bridge (Switch SW-A1) se configuro lo siguiente:
+
+    spanning-tree vlan 1,11,21,31,41,51 priority 4096
+
+Y para el resto de Switches que conforman la Red se configuró:
+
+    spanning-tree mode rapid-pvst
+
+****
+
+**Direccionamiento IP**
+
+Se asigna una ip correspondiente a cada Dispositivo:
+
+EDIFICIO A	
+
+    Nombre	        IP	            Vlan
+    Docencia1	    192.168.11.1	Vlan 11
+    Docencia2	    192.168.11.2	Vlan 11
+    Docencia3	    192.168.11.3	Vlan 11
+    Admin2	        192.168.21.1	Vlan 21
+    Laboratorio4	192.168.41.1	Vlan 41
+    Laboratorio2	192.168.41.2	Vlan 41
+        
+EDIFICIO B		
+        
+    Nombre	    IP	             Vlan
+    Docencia6	192.168.11.4	Vlan 11
+    Admin1	    192.168.21.2	Vlan 21
+    Biblioteca1	192.168.31.1	Vlan 31
+    Biblioteca2	192.168.31.2	Vlan 31
+    Biblioteca3	192.168.31.3	Vlan 31
+    Biblioteca4	192.168.31.4	Vlan 31
+    Biblioteca5	192.168.31.5	Vlan 31
+        
+        
+        
+EDIFICIO C		
+        
+    Nombre	    IP	            Vlan
+    Docencia7	192.168.11.5	Vlan 11
+    Docencia8	192.168.11.6	Vlan 11
+    Docencia9	192.168.11.7	Vlan 11
+    Admin3	    192.168.21.3	Vlan 21
+    Biblioteca6	192.168.31.6	Vlan 31
+        
+        
+        
+EDIFICIO D		
+        
+    Nombre	        IP	            Vlan
+    Docencia10	    192.168.11.8	Vlan 11
+    Admin4	        192.168.21.4	Vlan 21
+    Admin5	        192.168.21.5	Vlan 21
+    Laboratorio3	192.168.41.3	Vlan 41
+    Biblioteca7	    192.168.31.7	Vlan 31
+    Visitantes1	    192.168.51.1	Vlan 51
+    Visitantes2 	192.168.51.2	Vlan 51
+    Visitantes3	    192.168.51.3	Vlan 51
+
+
+****
+**Tablas VLAN**
+
+Las vlan implementadas en toda la red son las siguientes:
+
+    VLAN	Nombre	          Dispositivos
+
+    11	    Docencia	        Docencia1, Docencia2, Docencia3,                
+                                Docencia6, Docencia7, Docencia8,
+                                Docencia9, Docencia10
+
+    21	    Admin       	    Admin2, Admin1, Admin3, Admin4, Admin5
+
+    31	    Biblioteca	        Biblioteca1, Biblioteca2, Biblioteca3,
+                                Biblioteca4, Biblioteca5, Biblioteca6,
+                                Biblioteca7
+
+    41      Laboratorio         Laboratorio4, Laboratorio2, Laboratorio3
+                          
+    50	    Visitantes	        Visitantes1, Visitantes2, Visitantes3
+
+****
+
+**Pruebas de Conectividad**
+
+Se realizan las siguientes pruebas de conectividad  con el fin de verificar el  correcto funcionamiento de las vlan
+
+*11	Docencia*	
+
+![Texto alternativo](img/PingDocencia.png)
+
+*21	Admin* 
+
+![Texto alternativo](img/PingAdmin.png)
+
+*31	Biblioteca*    
+
+![Texto alternativo](img/PingBiblio.png)
+
+*41  Laboratorio*
+
+![Texto alternativo](img/PingLab.png)
+
+*51	Visitantes* 
+
+![Texto alternativo](img/PingVisi.png)
+
+****
+
+**Verificación de Configuración**
+
+se valida la  correcta configuracion de STP, Etherchannel y los puertos troncales de los switches con los siguientes ejemplos:
+
+*STP show spanning-tree*
+![Texto alternativo](img/spanning1.png)
+
+![Texto alternativo](img/spanning2.png)
+
+![Texto alternativo](img/spanning3.png)
+
+*EtherChannel show etherchannel summary*
+
+![Texto alternativo](img/etherchannel1.png)
+
+![Texto alternativo](img/etherchannel2.png)
+
+![Texto alternativo](img/etherchannel3.png)
+
+
+*Trunk show interfaces trunk*
+
+![Texto alternativo](img/trunk1.png)
+
+![Texto alternativo](img/trunk2.png)
+
+![Texto alternativo](img/trunk3.png)
+
+
+****
+
+**Presupuesto Estimado**
+
+Para la realizacion de la red , se investigo el presupuesto ideal, y el resultado es el siguiente:
+
+    Equipo	    Marca 	             Cantidad	Unidades Precio/U	Total
+    AccesPoint	Aruba Instant On        2		         2350	     4700
+                AP11 (R3J21A)	
+
+    switch 2960 Cisco Catalyst          11		         4800	     52800
+    24TT	     WS-C2960X-24PS-L 
+                - Conmutador Ethernet 
+                de 24 puertoscon PoE
+                de 370 W, color negro
+                (677W967)	
+
+    Switch  	Cisco Catalyst 9200L	6		          16000	     96000
+    
+    Hub PT	    Hub Netgear 8 puertos	2		          240	    480
+    
+    Repetidor   TP-Link	                1		          180	    180
+
+    módulos de  Cisco Compatible 	    22		          70	    1540
+    fibra       SFP 1Gb
+    óptica (PT
+    -SWITCH-
+    NM-1FFE)	
+
+    cable UTP   Cable Ethernet UTP  	250	    mts	      19	    4750
+    Cat5e/6	    CAT 6A Condumex
+
+    cable de    Fibra multimodo OM3	    154	    mts 	  79	    12166
+    fibra 
+    óptica	
+
+    Conector:   Genérico Cat6	        80		           5	    400
+    RJ-45	
+
+    Conector LC	    Genérico LC dúplex	 22		           20	    440
+
+**Total Estimado: Q173456**
+
+****
