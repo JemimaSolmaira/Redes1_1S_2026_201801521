@@ -1,0 +1,258 @@
+**IMPLEMENTACION DE LA TOPOLOGIA**
+
+**Selección de edificios y diseño de topología**
+
+Topología Completa
+
+![Texto alternativo](img/Topologia.png)
+
+Se seleccionaron ocho áreas operativas reales y defendibles del Aeropuerto Internacional La Aurora con base en información pública de la DGAC, incluyendo administración del AILA, navegación aérea, seguridad aeroportuaria, operaciones aeroportuarias, transporte aéreo, infraestructura aeroportuaria, financiero y recursos humanos. La topología elegida es una estrella extendida jerárquica, en la que cada área dispone de un switch principal y, según la cantidad de hosts, uno o más switches secundarios. Esta estructura facilita la segmentación por VLAN, mejora el orden físico y lógico de la red y simplifica la administración. Las áreas críticas cuentan con al menos dos enlaces físicos hacia la red para garantizar continuidad operativa ante la falla de un enlace. Asimismo, la red mantiene separados los dominios de colisión mediante switches y enlaces dedicados, mientras que las áreas con mayor número de hosts disponen de mayor capacidad de uplink o enlaces redundantes, evitando cuellos de botella. El cableado propuesto combina UTP categoría 6 para acceso y enlaces troncales de mayor capacidad entre switches principales.
+
+
+**Áreas operativas seleccionadas**
+
+Para el diseño se proponen las siguientes 8 áreas:
+
+Administración del Aeropuerto Internacional La Aurora
+Navegación Aérea
+Seguridad Aeroportuaria / Seguridad Operacional
+Operaciones Aeroportuarias
+Transporte Aéreo
+Infraestructura Aeroportuaria
+Departamento Financiero
+Recursos Humanos
+
+![Texto alternativo](img/T1.png)
+
+![Texto alternativo](img/T2.png)
+
+![Texto alternativo](img/T3.png)
+
+Se eligió una estrella extendida porque:
+
+centraliza la administración de cada área en un switch principal
+facilita identificar fallas;
+simplifica el crecimiento de la red;
+permite separar claramente los segmentos por VLAN;
+reduce desorden frente a una malla completa;
+facilita aplicar redundancia solo donde realmente se necesita.
+
+**Areas críticas y alta disponibilidad**
+
+No todas las áreas tienen el mismo impacto operativo. Para cumplir el requisito de alta disponibilidad, se declara criticas estas res areas estas 3 áreas:
+
+*Departamento de transporte Aereo*
+
+Es crítica porque soporta servicios directamente relacionados con la operación del tránsito aéreo y radioayudas; la documentación pública del AILA menciona la importancia de la coordinación con Navegación Aérea y con las áreas de protección de radioayudas para la operación segura del aeropuerto.
+
+*Departamento de Vigiligancia de la Seguridad Operacional*
+
+Es crítica porque protege operaciones, personas, bienes y cumplimiento normativo. La DGAC publica funciones y referencias de Seguridad Aeroportuaria/AVSEC y de vigilancia de seguridad operacional dentro de su estructura.
+
+*Administración / Operaciones del AILA*
+
+Es crítica porque coordina la operación global del aeropuerto, la gestión de incidentes y la continuidad administrativa del aeropuerto principal del país. La DGAC identifica al AILA como aeropuerto principal y publica referencias específicas a la administración del AILA.
+
+**Implementación de alta disponibilidad**
+
+Para estas áreas se configuro:
+
+dos enlaces físicos como mínimo hacia la red;
+ambos enlaces conectan al mismo equipo de distribución, agruparlos con EtherChannel para para evitar cuellos de botella y mantener servicio ante la caída de un enlace;
+
+
+**Dominios de colisión**
+
+
+La red debe garantizar que cada área opere adecuadamente segmentada. En Ethernet con switches, cada puerto de switch constituye su propio dominio de colisión. Por eso, la separación correcta se logra así:
+
+cada host conectado a un puerto de acceso pertenece a un dominio de colisión independiente;
+cada enlace entre switches también delimita un segmento separado;
+las VLAN separan el tráfico lógico por áreas;
+los switches secundarios aíslan el tráfico local y evitan que toda el área comparta un solo medio.
+
+
+****
+**TABLA DE SUBNETING** 
+
+La distribucion se realizo de la siguiente manera:
+
+![Texto alternativo](img/host1.png)
+
+![Texto alternativo](img/host2.png)
+
+
+****
+
+**CONFIGURACIONES REALIZADAS**
+
+
+**VLANs por área**
+
+
+Con el fin de separar lógicamente la red del aeropuerto por áreas operativas, se definió una VLAN por edificio o área, de acuerdo con la tabla establecida en la sección 2.1.7. Esta segmentación permite aislar el tráfico de cada área, reducir el tamaño de los dominios de broadcast y simplificar la administración de la red.
+
+También se implementó la VLAN 999 como VLAN Blackhole, la cual fue destinada a todos los puertos no utilizados. Esta práctica incrementa la seguridad de la red al impedir que puertos libres queden en la VLAN por defecto o en una VLAN operativa. Además, dichos puertos fueron configurados como puertos de acceso y se recomienda mantenerlos administrativamente apagados para evitar conexiones no autorizadas.
+
+
+Creación de VLANs
+
+
+    enable
+    configure terminal
+    vlan 11
+    name Transporte_Aereo
+    vlan 21
+    name Navegacion_Aerea
+    vlan 31
+    name Seguridad_Operacional
+    vlan 41
+    name Infraestructura
+    vlan 51
+    name Servicios_Administrativos
+    vlan 61
+    name Financiero
+    vlan 71
+    name RRHH
+    vlan 81
+    name Administracion_Aeropuerto
+    vlan 99
+    name Nativa
+    vlan 999
+    name Blackhole
+    end
+
+
+
+**VTP**
+
+También se implementó la VLAN 999 como VLAN Blackhole, la cual fue destinada a todos los puertos no utilizados. Esta práctica incrementa la seguridad de la red al impedir que puertos libres queden en la VLAN por defecto o en una VLAN operativa. Además, dichos puertos fueron configurados como puertos de acceso y se recomienda mantenerlos administrativamente apagados para evitar conexiones no autorizadas.
+
+    Configuración en servidor
+    conf t
+    vtp domain 201801521
+    vtp mode server
+    vtp password area1
+    vtp version 2
+    end
+
+    Configuración en cliente
+    conf t
+    vtp domain 201801521
+    vtp mode client
+    vtp password area1
+    end
+
+
+
+Configuración de trunk
+
+    conf t
+    interface fa0/1
+    switchport mode trunk
+    switchport trunk native vlan 99
+    end
+    Verificación
+    show interfaces trunk
+
+
+**VLAN Blackhole 999**
+
+Se decidió usar la VLAN 999 para puertos no utilizados:
+
+    Configuración
+    conf t
+    interface range fa0/10 - 24
+    switchport mode access
+    switchport access vlan 999
+    shutdown
+    end
+    Verificación
+    show vlan brief
+    show interfaces status
+
+**EtherChannel con LACP**
+
+Para aumentar la disponibilidad y la capacidad de transmisión entre switches principales, se implementó EtherChannel utilizando el protocolo LACP (Link Aggregation Control Protocol).
+
+De acuerdo con el requerimiento, entre switches principales se agruparon dos enlaces adicionales, teniendo tres enlaces físicos en total por conexión principal-principal. Estos tres enlaces fueron integrados dentro de un solo canal lógico. Esto permite que varios enlaces físicos funcionen como una única interfaz lógica de mayor capacidad.
+
+
+    conf t
+    interface range fa7/1 - 9
+    switchport mode trunk
+    switchport trunk native vlan 99
+    channel-group 1 mode active
+    no shutdown
+    exit
+
+    interface port-channel 1
+    switchport mode trunk
+    switchport trunk native vlan 99
+    no shutdown
+    end
+
+**STP / Rapid PVST+**
+
+Con el objetivo de prevenir bucles de capa 2 y asegurar la estabilidad de la topología, se implementó Rapid PVST+ (Rapid Per-VLAN Spanning Tree Plus) en todos los switches de la red.
+
+Con el objetivo de prevenir bucles de capa 2 y asegurar la estabilidad de la topología, se implementó Rapid PVST+ (Rapid Per-VLAN Spanning Tree Plus) en todos los switches de la red.
+
+En todos los switches:
+
+    conf t
+    spanning-tree mode rapid-pvst
+    end
+    Root primary por VLAN de área
+
+Ejemplos:
+
+    Área 1
+    conf t
+    spanning-tree vlan 11 root primary
+    end
+    Área 2
+    conf t
+    spanning-tree vlan 21 root primary
+    end
+    Área 3
+    conf t
+    spanning-tree vlan 31 root primary
+    end
+
+
+
+Se escogió switch principal central como root de la VLAN 99:
+
+    conf t
+    spanning-tree vlan 99 root primary
+    end
+
+Y otro como respaldo:
+
+    conf t
+    spanning-tree vlan 99 root secondary
+    end
+
+Verificación
+
+    show spanning-tree summary
+    show spanning-tree root
+    show spanning-tree vlan 11
+    show spanning-tree vlan 99
+
+
+****
+
+**PRUEBAS REALIZADAS**
+
+Se realizaron pruebas de ping dentro de las vlan :
+
+Ejemplos:
+
+![Texto alternativo](img/ping.png)
+
+
+
+
+
