@@ -1,0 +1,441 @@
+**MANUAL TECNICO**
+
+**Topologia Completa**
+
+![Texto alternativo](imgs/completo.png)
+
+
+****
+**BACKBONE**
+
+![Texto alternativo](imgs/backbone.png)
+
+
+**Requisitos solicitados**
+
+    	                                        
+    Mínimo dos dispositivos capa 3 en el núcleo	    CORE 1 y CORE 2
+
+    Redundancia entre dispositivos principales	    EtherChannel entre CORE 1
+                                                    y CORE 2
+
+    Segmento OSPF	                                Occidente
+
+    Segmento EIGRP	                                Norte
+
+    Segmento RIP	                                Oriente
+
+    Segmento estático	                            Central
+
+    Mínimo dos puntos de redistribución	            CORE 1 y CORE 2
+
+    Subneteo propio	                                Se usará una red /24 dividida   
+                                                    en /30
+
+    Diferentes medios físicos	                    Ethernet, fibra y serial
+
+    Comunicación entre todas las áreas	            Mediante redistribución de rutas
+
+
+**Distribución de protocolos en backbone**
+ Medios físicos utilizados
+
+    Enlace	                    Medio físico
+
+    R-ORIENTE  y R-OCCIDENTE	Serial
+
+    R-CENTRAL y R-NORTE	        Fibra óptica
+
+    R-ORIENTE y CORE1	        Ethernet
+
+    CORE1 y CORE2	            EtherChannel
+
+    CORE2 y R-CENTRAL	        Ethernet
+
+De esta manera se cumplen los medios fisicos obligatorios
+
+**Red base del backbone**
+
+Red: 10.21.0.0/24 y se dividieron en subredes /30.
+
+Máscara:255.255.255.252
+
+**Tabla de direccionamiento de Backbone**
+
+Enlaces del backbone
+
+Entre CORE1 y R-ORIENTE:
+
+    RIP
+    10.21.0.4/30
+    CORE1: .5
+    R-ORIENTE: .6
+    Ethernet
+
+Entre R-ORIENTE y R-OCCIDENTE:
+
+    RIP
+    10.21.0.8/30
+    R-ORIENTE: .9
+    R-OCCIDENTE: .10
+    Serial
+    Centro
+
+Entre CORE1 y CORE2:
+
+    OSPF
+    10.21.0.0/30
+    CORE1: .1
+    CORE2: .2
+    EtherChannel
+    Lado derecho
+
+Entre CORE2 y R-CENTRAL:
+
+    ESTÁTICO
+    10.21.0.12/30
+    CORE2: .13
+    R-CENTRAL: .14
+    Ethernet
+
+Entre R-CENTRAL y R-NORTE:
+
+    EIGRP
+    10.21.0.16/30
+    R-CENTRAL: .17
+    R-NORTE: .18
+    Fibra
+
+
+**Nucleo del Backbone**
+
+El enlace CORE1 - CORE2 es el centro del backbone
+
+El backbone conecta los lados así:
+
+
+
+Entonces CORE1 y CORE2 son el punto por donde pasan las rutas entre el lado izquierdo y el lado derecho.
+
+OSPF es adecuado para el núcleo, OSPF se usa mucho como protocolo principal de backbone porque es más robusto que RIP, converge más rápido, trabaja bien en redes medianas o grandes, permite escalabilidad, es estándar abierto
+
+Entonces se usa OSPF en el núcleo para que el backbone tenga una base más estable.
+
+**Puntos de redistribución**
+
+Tu diseño necesita dos puntos de redistribución. Los más claros son:
+
+**Punto de redistribución 1: CORE1**
+
+CORE1 conecta:
+
+OSPF y RIP
+
+Entonces aquí se redistribuye rutas entre OSPF y RIP.
+
+CORE1 = redistribución RIP y OSPF
+
+Esto permite que las redes del lado izquierdo, que están en RIP, sean conocidas por el núcleo OSPF.
+
+**Punto de redistribución 2: CORE2**
+
+CORE2 conecta OSPF y rutas estáticas
+
+Entonces aquí redistribuyes rutas estáticas dentro de OSPF.
+
+CORE2 = redistribución ESTÁTICO y OSPF
+
+Esto permite que las redes del segmento Central se integren al resto del backbone.
+
+**Punto adicional: R-CENTRAL**
+
+
+R-CENTRAL = redistribución ESTÁTICO y EIGRP
+
+Esto permitiría que R-NORTE aprenda rutas hacia el resto del backbone mediante EIGRP.
+
+
+Dispositivo	Redistribución finales
+
+    CORE1	    RIP y OSPF
+    CORE2	    OSPF y Estático
+    R-CENTRAL	Estático y EIGRP
+
+****
+**SEDE OCCIDENTE**
+
+Para la Sede Occidente se implementó una topología de estrella extendida o árbol jerárquico, utilizando un switch principal como punto central de distribución y varios switches de acceso para conectar los departamentos internos. Esta topología permite una administración centralizada, facilita el mantenimiento de la red y permite crecimiento futuro agregando nuevos switches de acceso sin modificar completamente la estructura existente. Además, la segmentación mediante VLANs permite separar el tráfico de Operaciones, Administración, Seguridad e Inventario, mejorando el orden lógico de la red y reduciendo el dominio de broadcast por departamento.
+
+![Texto alternativo](imgs/sede_occ.png)
+
+**Vlan**
+
+| Departamento   | ID VLAN real |
+| -------------- | -----------: |
+| Operaciones    |      VLAN 11 |
+| Administración |      VLAN 21 |
+| Seguridad      |      VLAN 31 |
+| Inventario     |      VLAN 41 |
+
+**Subredes**
+
+Se asignaron subredes eficientes:
+
+    Departamento	Equipos	    Subred necesaria
+    Inventario	    55	/26,    permite 62 hosts
+    Operaciones 	40	/26,    permite 62 hosts
+    Administración	18	/27,    permite 30 hosts
+    Seguridad	    8	/28,    permite 14 hosts
+
+**Dispositivos utilizados**
+
+    Dispositivo	    Función
+    R-OCCIDENTE	    Router de salida hacia backbone y router-on-a-stick
+    SW-OCC-CORE	    Switch principal de la sede
+    SW-OCC-ACC1	    Switch de acceso
+    SW-OCC-ACC2	    Switch de acceso
+    SW-OCC-ACC3	    Switch de acceso
+    PCs	            Equipos finales por departamento
+
+
+
+
+**Tabla de direccionamiento de Occidente**
+
+![Texto alternativo](imgs/subocc.png)
+
+
+****
+
+**SEDE ORIENTE**
+
+La Sede Oriente se diseñó con dos routers de borde para garantizar alta disponibilidad en la puerta de enlace de las VLANs internas. Se implementó HSRP, permitiendo que ambos routers compartan una IP virtual por cada VLAN. Las estaciones finales utilizan esta IP virtual como gateway predeterminado, por lo que, ante la caída de uno de los routers, el segundo puede asumir automáticamente el rol activo sin requerir cambios en la configuración de los hosts.
+
+La red se segmentó mediante VLANs para Atención Regional, Administración, Seguridad e Inventario, separando el tráfico según la función operativa de cada área. Además, se utilizaron enlaces troncales entre el switch principal, los switches de acceso y los routers, permitiendo transportar todas las VLANs necesarias. Para distribuir el tráfico, R-ORIENTE1 se configuró como activo para Atención Regional y Administración, mientras que R-ORIENTE2 se configuró como activo para Inventario y Seguridad. Esto permite aprovechar ambos dispositivos y evita depender únicamente de un router para todo el tráfico interno.
+
+El direccionamiento fue diseñado mediante VLSM usando la red 192.168.23.0/24, asignando subredes de acuerdo con la cantidad de equipos por departamento y conservando espacio para crecimiento futuro.
+
+**VLANs de Sede Oriente**
+
+
+| Área              | VLAN real | Equipos |
+| ----------------- | --------: |  -----: |
+| Atención Regional |   VLAN 51 |      28 |
+| Administración    |   VLAN 21 |      19 |
+| Seguridad         |   VLAN 31 |       8 |
+| Inventario        |   VLAN 41 |      21 |
+
+
+**Subneteo VLSM para Oriente**
+
+
+    Área	            Equipos 	Subred	Hosts útiles
+    Atención Regional	    28	    /27	        30
+    Inventario	            21	    /27	        30
+    Administración	        19	    /27	        30
+    Seguridad	            8	    /28	        14
+
+**Tabla de direccionamiento de Oriente**
+
+
+**Nuevo enlace R-ORIENTE2 y CORE1**
+
+nueva subred: 10.21.0.20/30
+
+Tabla:
+
+    Enlace	Protocolo	Subred	            Equipo	        IP
+    CORE1 - R-ORIENTE2	RIP	10.21.0.20/30	CORE1	    10.21.0.21
+    CORE1 - R-ORIENTE2	RIP	10.21.0.20/30	R-ORIENTE2	10.21.0.22
+
+
+****
+**SEDE NORTE**
+
+La Sede Norte se diseñó con una topología jerárquica redundante compuesta por un switch principal y dos switches de acceso interconectados entre sí. Esta estructura permite mantener caminos alternos internos, de manera que si falla un enlace entre un switch de acceso y el switch principal, el tráfico puede redirigirse a través del otro switch de acceso. Para evitar bucles de capa 2 generados por la redundancia, se implementa Rapid PVST+, definiendo al switch principal como puente raíz.
+
+La segmentación se realiza mediante VLANs para separar el tráfico de Operaciones, Administración, Seguridad e Inventario. El uso de VTP permite administrar las VLANs desde el switch principal y propagarlas automáticamente hacia los switches de acceso. Además, los enlaces troncales permiten transportar las VLANs entre switches y hacia el router R-NORTE, donde se realizará el enrutamiento inter-VLAN mediante subinterfaces.
+
+El direccionamiento IP se diseñó con VLSM usando la red base 192.168.22.0/24, asignando subredes de acuerdo con la cantidad de equipos de cada área. Esto permite un uso eficiente de direcciones y deja espacio disponible para crecimiento futuro.
+
+![Texto alternativo](imgs/sede_nor.png)
+
+**Vlan**
+
+| Área           | VLAN real | Equipos |
+| -------------- | --------: | ------: |
+| Operaciones    |   VLAN 11 |      30 |
+| Administración |   VLAN 21 |      12 |
+| Seguridad      |   VLAN 31 |      10 |
+| Inventario     |   VLAN 41 |      15 |
+
+**Subneteo VLSM**
+
+    Área	    Equipos 	Subred necesaria	Hosts útiles
+    Operaciones	    30	        /27             	30
+    Inventario	    15	        /27	                30
+    Administración	12	        /28	                14
+    Seguridad	    10	        /28	                14
+
+**Rapid PVST+ en Sede Norte**
+
+    Switch	        Rol     STP 
+    SW-NOR-CORE	    Root    primary
+    SW-NOR-ACC1	    Acceso
+    SW-NOR-ACC2	    Acceso / camino alterno
+
+**Tabla de direccionamiento de Norte**
+
+![Texto alternativo](imgs/subnor.png)
+
+****
+**SEDE CENTRAL**
+
+La Sede Central se diseñó mediante una estructura jerárquica redundante, utilizando dos switches de distribución interconectados mediante EtherChannel. Esta configuración proporciona mayor disponibilidad y evita que exista un único enlace entre los equipos principales del área. Los switches de acceso se conectan a la capa de distribución mediante enlaces troncales, permitiendo transportar las VLANs correspondientes a Administración, Seguridad, Monitoreo y Control, Soporte y Servicios Críticos.
+
+El uso de EtherChannel entre los switches de distribución permite agrupar varios enlaces físicos en un enlace lógico, aumentando la capacidad de transmisión y manteniendo la conectividad si uno de los enlaces físicos falla. Además, se configuró Rapid PVST+ para evitar bucles de capa 2 y controlar los caminos redundantes.
+
+El dispositivo SW-CEN-DIST1 fue seleccionado como Root Bridge principal debido a su ubicación central dentro de la topología y su conexión directa con R-CENTRAL, que proporciona el gateway interno de las VLANs mediante Router on a Stick. SW-CEN-DIST2 queda como Root Bridge secundario, proporcionando respaldo ante una posible falla.
+
+La segmentación por VLAN permite separar claramente el tráfico administrativo, de seguridad, monitoreo, soporte y servicios críticos. El direccionamiento fue diseñado mediante VLSM usando la red 192.168.24.0/24, asignando subredes de acuerdo con la cantidad de equipos necesarios y conservando espacio para crecimiento futuro.
+
+![Texto alternativo](imgs/sede_centr.png)
+
+**Vlan**
+
+| Área                  | VLAN real | Equipos |
+| --------------        | --------: | ------: |
+| Administración        |   VLAN 21 |      20 |
+| Seguridad             |   VLAN 31 |      9  |
+| Monitoreo y Control   |   VLAN 61 |      45 |
+| Soporte               |   VLAN 71 |      10 |
+| Servicios Críticos    |   VLAN 81 |      16 |
+
+
+**Subneteo VLSM**
+
+    Área	                Equipos	     Subred necesaria	Hosts útiles
+    Monitoreo y Control 	45	            /26	                62
+    Administración	        20	            /27	                30
+    Servicios Críticos  	16	            /27	                30
+    Soporte	                10	            /28	                14
+    Seguridad	            9	            /28	                14
+
+**Root Bridge principal**
+
+Se utiliza para el root bridge:
+
+SW-CEN-DIST1 = Root Bridge principal
+SW-CEN-DIST2 = Root Bridge secundario
+
+SW-CEN-DIST1 fue definido como Root Bridge principal porque se encuentra en la capa de distribución y mantiene conexión directa con R-CENTRAL, dispositivo encargado del gateway interno de las VLANs. Esta decisión permite que los caminos de capa 2 converjan hacia el punto más cercano al gateway, reduciendo recorridos innecesarios y centralizando el flujo del tráfico. SW-CEN-DIST2 queda como Root Bridge secundario para asumir el rol en caso de falla del switch principal.
+
+**Tabla de direccionamiento Central**
+
+![Texto alternativo](imgs/subcentr.png)
+
+****
+**CONFIGURACIONES PRINCIPALES**
+
+**Configuracion de vlan**
+
+Estos comandos se utilizaron para crear las VLANs de cada sede y asignarles un nombre según el departamento correspondiente. Las VLANs permiten separar lógicamente el tráfico de la red, reduciendo dominios de broadcast y organizando la comunicación por áreas funcionales.
+
+Por ejemplo, en Occidente se usaron VLANs para Operaciones, Administración, Seguridad e Inventario. En Central se agregaron otras VLANs como Monitoreo y Control, Soporte y Servicios Críticos.
+
+    enable
+    configure terminal
+    hostname SW-OCC-CORE
+
+    vlan 11
+    name OPERACIONES
+
+    y con el resto de vlan
+
+**Configuracion de VTP**
+
+Estos comandos se usaron en el switch principal de una sede para definir el dominio VTP y establecerlo como servidor. El switch en modo server es el encargado de crear y propagar las VLANs hacia los switches cliente.
+
+    vtp domain OCCIDENTE
+    vtp mode server
+
+Estos comandos se usaron en los switches secundarios para que reciban automáticamente las VLANs creadas en el servidor.
+
+    vtp domain OCCIDENTE
+    vtp mode cliente
+
+**Configuracion de trunk**
+
+Estos comandos se utilizaron para configurar enlaces troncales entre switches y también entre un switch y un router cuando se usó Router on a Stick.
+
+
+    interface fa0/24
+    switchport mode trunk
+    switchport trunk allowed vlan 11,21,31,41
+    no shutdown
+
+**Configuracion de Rapid PVST+**
+
+Este comando se utilizó para activar Rapid PVST+ en los switches. Rapid PVST+ evita bucles de capa 2 cuando existen enlaces redundantes entre switches y permite una convergencia más rápida que STP tradicional.
+
+    spanning-tree mode rapid-pvst
+
+    spanning-tree vlan 11,21,31,41 root primary
+
+    spanning-tree vlan 11,21,31,41 root secondary   
+
+
+**Protocolo Rip**
+
+Estos comandos se usaron para activar RIP versión 2 en los routers del segmento RIP. El comando version 2 permite trabajar con máscaras de subred y VLSM. El comando no auto-summary evita que RIP resuma automáticamente las redes por clase.
+
+network 10.0.0.0 permitió incluir los enlaces del backbone que usan direcciones 10.21.0.0.
+network 192.168.21.0 permitió anunciar la red interna de Occidente.
+
+    router rip
+    version 2
+    no auto-summary
+    network 10.0.0.0
+    network 192.168.21.0
+
+**Protocolo Eigrp**
+
+Estos comandos se usaron para activar EIGRP en el segmento entre R-CENTRAL y R-NORTE. El número 100 representa el sistema autónomo de EIGRP y debe coincidir en ambos routers. Las redes indicadas permiten formar vecindad por el enlace del backbone y anunciar la LAN de Norte.
+
+    router eigrp 100
+    no auto-summary
+    network 10.21.0.16 0.0.0.3
+    network 192.168.22.0 0.0.0.255
+
+**Protocolo ospf**
+
+Estos comandos se usaron para activar OSPF en el núcleo del backbone, especialmente entre CORE1 y CORE2. El router-id identifica de forma única al dispositivo dentro del proceso OSPF. El comando network indica qué red participa en OSPF y en qué área se encuentra.
+
+    router ospf 1
+    router-id 2.2.2.2
+    network 10.21.0.0 0.0.0.3 area 0
+    redistribute static subnets
+
+**Estatico**
+
+Estos comandos se usaron en CORE2 para indicar que las redes de Central y Norte se alcanzan a través de R-CENTRAL, cuya IP es 10.21.0.14.
+
+    ip route 192.168.24.0 255.255.255.0 10.21.0.14
+    ip route 192.168.22.0 255.255.255.0 10.21.0.14
+
+
+**Configuración de HSRP**
+
+Estos comandos se usaron en la Sede Oriente para garantizar redundancia del gateway. El comando standby 51 ip define la IP virtual que usarán las PCs como puerta de enlace. El comando priority define qué router será activo. El comando preempt permite que el router con mayor prioridad recupere el rol activo si vuelve después de una falla.
+
+    standby 51 ip 192.168.23.1
+    standby 51 priority 110
+    standby 51 preempt
+
+****
+
+**PRUEBAS DE PING**
+
+![Texto alternativo](imgs/ping1.png)
+
+![Texto alternativo](imgs/ping2.png)
